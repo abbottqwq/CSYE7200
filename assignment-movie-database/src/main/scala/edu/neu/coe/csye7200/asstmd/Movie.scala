@@ -98,13 +98,13 @@ object Movie extends App {
       * @param w a line of input.
       * @return a Try[Movie]
       */
-    def parse(w: String): Try[Movie] = ??? // TO BE IMPLEMENTED
+    def parse(w: String): Try[Movie] = Try(Movie(w split ",")) // TO BE IMPLEMENTED
   }
 
   val ingester = new Ingest[Movie]()
   if (args.length > 0) {
     val source = Source.fromFile(args.head)
-    val kiwiMovies = for (my <- ingester(source)) yield for (m <- my; if m.production.isKiwi) yield m
+    val kiwiMovies = for(my <- ingester(source)) yield for(m <- my; if m.production.isKiwi) yield m
     kiwiMovies foreach (_ foreach println)
     source.close()
   }
@@ -119,9 +119,8 @@ object Movie extends App {
   def elements(list: Seq[String], indices: Int*): List[String] = {
     // Hint: form a new list which is consisted by the elements in list in position indices. Int* means array of Int.
     // 6 points
-    val result: Seq[String] =
+    val result: Seq[String] = indices map list
     // TO BE IMPLEMENTED
-    ???
     result.toList
   }
 
@@ -173,7 +172,7 @@ object Name {
   // this regex will not parse all names in the Movie database correctly. Still, it gets most of them.
   private val rName = """^([\p{L}\-\']+\.?)\s*(([\p{L}\-]+\.)\s)?([\p{L}\-\']+\.?)(\s([\p{L}\-]+\.?))?$""".r
 
-  def apply(name: String): Name = (for (ws <- rName.unapplySeq(name)) yield for (w <- ws) yield Option(w))
+  def apply(name: String): Name = (for(ws <- rName.unapplySeq(name)) yield for(w <- ws) yield Option(w))
   match {
     case Some(Seq(Some(first), _, maybeMiddle, Some(last), _, maybeSuffix)) => Name(first, maybeMiddle, last, maybeSuffix)
     case x => throw ParseException(s"parse error in Name: $name (parsed as $x)")
@@ -201,8 +200,19 @@ object Rating {
     */
   // Hint: This should similar to apply method in Object Name. The parameter of apply in case match should be same as case class Rating
   // 13 points
-  def apply(s: String): Rating = ??? // TO BE IMPLEMENTED
 
+  def apply(s: String): Rating = rRating
+    .unapplySeq(s)
+    .map(ws => ws.map(w => Option(w)))
+  match {
+    case Some(List(Some(code), None, None)) => new Rating(code, None)
+    case Some(List(Some(code: String), _, someAge)) => (code, someAge.map(_.toInt))
+    match {
+      case (code, age) if age.get > 0 => new Rating(code, age)
+      case _ => throw ParseException("age error")
+    }
+    case _ => throw ParseException("Rate error")
+  }
 }
 
 case class ParseException(w: String) extends Exception(w)
