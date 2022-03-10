@@ -130,11 +130,10 @@ object Movie extends App {
 		// 5 points
 		// TO BE IMPLEMENTED
 		import MoviesProtocol._
-		ms.find(m => !m.toJson.convertTo[Movie].equals(m)) match {
+		ms.find(m => !Try(m.toJson.convertTo[Movie].equals(m)).getOrElse(return false)) match {
 			case Some(_) => false
 			case None => true
 		}
-
 	}
 
 	def getMoviesFromCountry(country: String, movies: Iterator[Try[Movie]]): Try[Seq[Movie]] = {
